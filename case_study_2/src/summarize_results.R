@@ -22,7 +22,10 @@ write.csv(conf_matrix_PHMM,paste0(directory,"/params/conf_mat_",
                                   paste0(setdiff(names(dist),"knownState"),collapse = "_"),"_",
                                   round(log10(lambda),3),"_",
                                   K,".csv"))
-
+# write AUCS
+write.csv(AUCs_lr,paste0(directory,"/params/AUC_lr_",K,".csv"))
+write.csv(AUCs_svm,paste0(directory,"/params/AUC_svm_",K,".csv"))
+write.csv(AUCs_rf,paste0(directory,"/params/AUC_rf_",K,".csv"))
 write.csv(AUCs_base,paste0(directory,"/params/AUC_base_",K,".csv"))
 write.csv(AUCs_PHMM,paste0(directory,"/params/AUC_",
                                       paste0(setdiff(names(dist),"knownState"),collapse = "_"),"_",

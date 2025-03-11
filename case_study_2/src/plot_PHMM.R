@@ -1,5 +1,5 @@
 ### plot results ###
-options(scipen=999)
+#options(scipen=999)
 
 labs <- c(Elevation = "Depth (m)",
           maxDepth = "Maximum Depth (m)",
@@ -71,6 +71,15 @@ plot_dives <- function(dives,df){
       geom_hline(yintercept = 0) +
       geom_vline(aes(xintercept = stime),
                  data = dive_df %>% dplyr::filter(true_label == 4)) +
+      geom_vline(aes(xintercept = stime),
+                 data = dive_df %>% dplyr::filter(echo.steady %in% T),
+                 color = 'yellow') +
+      geom_vline(aes(xintercept = stime),
+                 data = dive_df %>% dplyr::filter(echo.rapid %in% T),
+                 color = 'orange') +
+      geom_vline(aes(xintercept = stime),
+                 data = dive_df %>% dplyr::filter(crunch %in% T),
+                 color = 'red') +
       labs(title = TeX(paste0("$\\alpha = ", lambda, "$")),
            color="", y="",
            x="Time (min)") +

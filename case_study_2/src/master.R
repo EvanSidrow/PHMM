@@ -18,6 +18,10 @@ library(signal)
 library(oce)
 library(pROC)
 library(latex2exp)
+library(randomForest)
+library(caret)
+library(e1071)
+library(logistf)
 
 directory <- "/Users/evsi8432/Documents/Research/PHMM/case_study_2"
 setwd(directory)
@@ -26,9 +30,9 @@ setwd(directory)
 
 args = commandArgs(trailingOnly=TRUE)
  
-K <- as.numeric(args[1]) # number of cross-validations (one means just do all the data)
-lambda <- as.numeric(args[2]) # lambda for paper
-num_seeds <- as.numeric(args[3]) # number of random seeds
+K <- 4 #as.numeric(args[1]) # number of cross-validations (one means just do all the data)
+lambda <- 0.01 #as.numeric(args[2]) # lambda for paper
+num_seeds <- 10 #as.numeric(args[3]) # number of random seeds
 
 # create directories
 dir.create(directory, showWarnings = FALSE)
@@ -40,22 +44,42 @@ set.seed(1)
 
 # load in data
 df <- data.frame(fread("dat/case_study_2_data.csv"))
+df_echo <- data.frame(fread("../../dat/Final_Data_fine.csv"))
+df_echo <- df_echo[df_echo$divenum %in% unique(df$divenum),]
+df <- merge(df,df_echo[,c("stime","divenum","echo.steady","echo.rapid","crunch")], 
+            all.x=T,all.y=F)
 
 # create cross-validation groups
 print("seperating train and test set...")
 source("src/make_test_train.R")
 
+# plot the data
+print("plotting data...")
+source("src/plot_data.R")
+
 # initialize model lists
 models_base <- list()
+models_rf <- list()
+models_svm <- list()
+models_lr <- list()
 models_PHMM <- list()
 
 probs_PHMM <- list()
+probs_rf <- list()
+probs_svm <- list()
+probs_lr <- list()
 probs_base <- list()
 
 AUCs_base <- rep(0,K)
+AUCs_rf <- rep(0,K)
+AUCs_svm <- rep(0,K)
+AUCs_lr <- rep(0,K)
 AUCs_PHMM <- rep(0,K)
 
 conf_matrices_base <- list()
+conf_matrices_rf <- list()
+conf_matrices_svm <- list()
+conf_matrices_lr <- list()
 conf_matrices_PHMM <- list()
 
 for(k in 1:K){
@@ -67,6 +91,9 @@ for(k in 1:K){
   print("fitting baseline...")
   source("src/fit_base.R") 
   models_base[[k]] <- base_model
+  models_rf[[k]] <- rf_model
+  models_svm[[k]] <- svm_model
+  models_lr[[k]] <- lr_model
   
   # evaluate baseline
   print("evaluating baseline...")
@@ -99,9 +126,6 @@ for(k in 1:K){
 
 # summarize cross-validation results
 print("summarizing results...")
-print(lambda)
-print(test_sets)
-print(probs_PHMM)
 source("src/summarize_results.R")
 
 # plot AUCs

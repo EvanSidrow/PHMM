@@ -6,6 +6,7 @@ library(ggplot2)
 library(latex2exp)
 library(pROC)
 
+setwd("/Users/evsi8432/Documents/Research/PHMM/case_study_1/src/HMM")
 opt_file <- "logMDDD_1-1-1_dd-30_2023-10-23.R"
 
 # get options
@@ -25,6 +26,9 @@ models[[2]] <- c("fixed",  0.5*ratio)
 models[[3]] <- c("fixed",  ratio)     # equal weight
 models[[4]] <- c("fixed",  0.5 + 0.5*ratio)
 models[[5]] <- c("fixed",  1.0)       # natural weight
+models[[6]] <- c("rf", "rf")
+models[[7]] <- c("svm", "svm")
+models[[8]] <- c("lr", "lr")
 n_models <- length(models) 
 
 dir.create(directory, showWarnings = FALSE)
@@ -137,21 +141,36 @@ for(model in models){
   df <- rbind(df,df_model)
 }
 
-plot0 <- ggplot(df,#[df$model %in% c("0","0.049","1"),],
+alpha_colors = gray.colors(3, start = 0.8, end = 0.0)
+alpha_colors = c(alpha_colors,colorRampPalette(c("#C6DBEF", "#084594"))(3))
+
+plot0 <- ggplot(df[df$model %in% c("0","0.049","1","rf","svm","lr"),],
                 aes(x=behaviour,
                     y=value,
                     fill=model)) +
   geom_col(position="dodge") +
-  scale_fill_grey(start = 0.8, end = 0.2) +#brewer(palette="Set2") +
+  scale_fill_manual(values = alpha_colors, labels = c(TeX("$\\alpha = 0$"),
+                                                      TeX("$\\alpha = 0.05$"),
+                                                      TeX("$\\alpha = 1$"),
+                                                      "MLR",
+                                                      "RF",
+                                                      "SVM")) +
   labs(x = "Dive Type",
        y = "",
-       fill = TeX("$\\alpha$")) +
-  facet_wrap(~metric,ncol=1,scales = "free")
+       pattern = "",
+       fill = "Model") +
+  facet_wrap(~metric,ncol=1,scales = "free") +
+  theme_classic() + 
+  geom_segment(aes(x=1,xend=1,y=0,yend=1),linetype = "dashed") + 
+  geom_segment(aes(x=2,xend=2,y=0,yend=1),linetype = "dashed") + 
+  geom_segment(aes(x=3,xend=3,y=0,yend=1),linetype = "dashed") 
+
+plot0
 
 ggsave(make_title(paste0(directory,"/plt/"),
                   "model_comparison.png"),
        plot = plot0,
-       width = 4,
+       width = 5,
        height = 4,
        device='png', 
        dpi=500)

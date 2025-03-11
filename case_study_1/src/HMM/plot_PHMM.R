@@ -10,6 +10,8 @@ library(GGally)
 rand_seed <- 1
 set.seed(rand_seed)
 
+setwd("/Users/evsi8432/Documents/Research/PHMM/case_study_1/src/HMM")
+
 # get command-line arguments
 args <- commandArgs(trailingOnly=TRUE)
 args <- c("logMDDD_1-1-1_dd-30_2023-10-23.R",NA)
@@ -72,6 +74,14 @@ n_models <- length(models)
 
 sind <- 0
 args_list <- sind:(n_whales*n_models-1)
+
+# initialize held-out vstates
+vstates <- list()
+vstates[[1]] <- vector()       # no weight
+vstates[[2]] <- vector() 
+vstates[[3]] <- vector()     # equal weight
+vstates[[4]] <- vector()
+vstates[[5]] <- vector()       # natural weight
 
 for(args in args_list){
 
@@ -141,6 +151,9 @@ hmm0 <- fitHMM(data=Data,
 # find states
 Data$vstates <- viterbi(hmm0)
 Data$vstates <- as.factor(Data$vstates)
+if(holdout_whale != "none"){
+  vstates[[model_ind]] <- c(vstates[[model_ind]],viterbi(hmm0))
+}
 
 # prepare colors and labels
 behaviours <- c("Resting","Travelling","Foraging")
@@ -193,6 +206,63 @@ rawDataDownLong <- rawData %>%
   pivot_longer(cols = cols_to_plot,
                names_to = "feature")
 
+# plot scatterplot
+if(holdout_whale == "none"){
+  plot0 <- ggplot(Data,aes(x=exp(logMDDD.x), 
+                           y=exp(logMDDD.y),
+                           color=factor(vstates))) +
+    geom_point(size=1,alpha = 0.5) +
+    labs(color="", 
+         y="Dive Duration (seconds)",
+         x="Maximum Depth (meters)") +
+    scale_x_continuous(trans='log10') +
+    scale_y_continuous(trans='log10') +
+    scale_color_manual(labels=group.names2,
+                       values=group.colors2) +
+    theme_classic() +
+    theme(strip.background = element_blank(),
+          strip.placement = "outside",
+          text = element_text(size=16)) +
+    guides(colour = guide_legend(override.aes = list(linewidth=3)))
+  
+  ggsave(paste0(directory,"/plt/",
+                "scatter-",lamb,
+                ".png"),
+         plot = plot0,
+         width = 6,
+         height = 4,
+         units = "in",
+         device='png',
+         dpi=500)
+  
+  plot0 <- ggplot(Data %>% arrange(-knownState),
+                  aes(x=exp(logMDDD.x), 
+                      y=exp(logMDDD.y),
+                      color=factor(knownState))) +
+    geom_point(size=1,alpha = 0.5) +
+    labs(color="", 
+         y="Dive Duration (seconds)",
+         x="Maximum Depth (meters)") +
+    scale_x_continuous(trans='log10') +
+    scale_y_continuous(trans='log10') +
+    scale_color_manual(labels=group.names2,
+                       values=group.colors2) +
+    theme_classic() +
+    theme(strip.background = element_blank(),
+          strip.placement = "outside",
+          text = element_text(size=16)) +
+    guides(colour = guide_legend(override.aes = list(linewidth=3)))
+  
+  ggsave(paste0(directory,"/plt/",
+                "scatter-known.png"),
+         plot = plot0,
+         width = 6,
+         height = 4,
+         units = "in",
+         device='png',
+         dpi=500)
+}
+
 # plot data
 for (whale in whales_to_keep){
 
@@ -220,8 +290,6 @@ for (whale in whales_to_keep){
     facet_wrap(~feature, ncol = 1, 
                labeller = as_labeller(labs), scales = "free_y",
                strip.position = "left")
-
-  plot1
   
   ggsave(paste0(directory,"/plt/",
                 holdout_whale,"-",
@@ -239,20 +307,20 @@ for (whale in whales_to_keep){
   plot_known_states = TRUE
   if(plot_known_states & lamb == 0.0){
       plot2 <- ggplot(df,aes(x=Time, y=value)) +
-        geom_line(aes(#color=factor(knownState),
+        geom_line(aes(color=factor(knownState),
                       group=divenum)) +
         geom_hline(yintercept = 0) +
         labs(color="", y="",
              x=paste("Elapsed time (hours after",stime,")")) +
         scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +
         scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +
-        #scale_color_manual(labels=group.names1,
-        #                   values=group.colors1) +
+        scale_color_manual(labels=group.names1,
+                           values=group.colors1) +
         theme_classic() +
         theme(strip.background = element_blank(),
               strip.placement = "outside",
               text = element_text(size=16)) +
-        #guides(colour = guide_legend(override.aes = list(linewidth=3))) +
+        guides(colour = guide_legend(override.aes = list(linewidth=3))) +
         facet_wrap(~feature, ncol = 1, 
                    labeller = as_labeller(labs), scales = "free_y",
                    strip.position = "left")
@@ -269,4 +337,42 @@ for (whale in whales_to_keep){
            dpi=500)
   }
 }
+}
+
+# plot scatterplots with held-out label estimates
+Data <- DataBackup
+
+for(model_ind in 1:5){
+  lamb  <- as.numeric(models[[model_ind]][2])
+  Data$vstates <- vstates[[model_ind]]
+  Data$vstates <- as.factor(Data$vstates)
+  
+  plot0 <- ggplot(Data,aes(x=exp(logMDDD.x), 
+                           y=exp(logMDDD.y),
+                           color=factor(vstates))) +
+    geom_point(size=1,alpha = 0.5) +
+    labs(color="", 
+         y="Dive Duration (seconds)",
+         x="Maximum Depth (meters)") +
+    scale_x_continuous(trans='log10') +
+    scale_y_continuous(trans='log10') +
+    scale_color_manual(labels=group.names2,
+                       values=group.colors2) +
+    theme_classic() +
+    theme(strip.background = element_blank(),
+          strip.placement = "outside",
+          text = element_text(size=16)) +
+    guides(colour = guide_legend(override.aes = list(linewidth=3)))
+  
+  print(plot0)
+  
+  ggsave(paste0(directory,"/plt/",
+                "scatter-",lamb,
+                "-heldout.png"),
+         plot = plot0,
+         width = 6,
+         height = 4,
+         units = "in",
+         device='png',
+         dpi=500)
 }

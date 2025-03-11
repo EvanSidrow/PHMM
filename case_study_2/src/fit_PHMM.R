@@ -107,5 +107,3 @@ if(file.exists(paste0(directory,"/params/",model_name))){
   
   saveRDS(hmm,paste0(directory,"/params/",model_name))
 }
-
-print(hmm)

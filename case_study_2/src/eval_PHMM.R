@@ -1,4 +1,4 @@
-df_unlabelled <- prepData(df[,c("ID","divenum","stime","ad",names(dist),"knownState")],
+df_unlabelled <- prepData(df[,c("ID","divenum","stime","ad",names(dist),"knownState","echo.steady","echo.rapid","crunch")],
                           coordNames=NULL)
 
 df_unlabelled$true_label <- df_unlabelled$knownState

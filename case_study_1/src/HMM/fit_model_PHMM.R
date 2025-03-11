@@ -16,6 +16,8 @@ library(data.table)
 library(RcppHungarian)
 library(mvtnorm)
 
+setwd("/Users/evsi8432/Documents/Research/PHMM/case_study_1/src/HMM")
+
 # get command-line arguments
 opt_file <- "logMDDD_1-1-1_dd-30_2023-10-23.R"
 
